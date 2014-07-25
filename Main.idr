@@ -32,3 +32,6 @@ main = do
               putStrLn name
           [self] => do
               putStrLn "Parsing JSON!"
+              parseJson "{\n \"hallo\":42,\"nichts\":null}"
+              parseJson "{{\n \"hallo\":42,\"nichts\":null}"
+              parseJson "{\"hello\": [{\"world\": false}, 3, \"string\", true, null]}"
