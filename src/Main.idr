@@ -1,4 +1,11 @@
 module Main
 
+import System
+
 main : IO ()
-main = putStrLn "Vindinium Starter Idris"
+main = do
+     args <- System.getArgs
+     case args of
+          [_, name] => do
+              putStrLn name
+          [self] => putStrLn "Usage: "
