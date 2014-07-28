@@ -4,24 +4,14 @@ import Network.Socket
 import Debug.Trace
 
 private
-f : IO (Either Int Socket)
-f = socket AF_INET Stream 0
-
--- SOCKET CREATED
-private
-f1 : IO (Maybe Socket)
-f1 = do
-   s <- f
-   case s of
-        Left err => pure Nothing
-        Right sock => pure $ Just sock
-
--- SOCKET OPENED
-private
-f2 : Socket -> IO Int
-f2 socket = let address = IPv4Addr 91 209 78 59
-                port = 80 in
-                connect socket address port
+httpConnect : SocketAddress -> IO(Maybe Socket)
+httpConnect address = do
+        eventuallySocket <- socket AF_INET Stream 0
+        case eventuallySocket of
+             Left _ => pure Nothing
+             Right sock => do
+                    res <- connect sock address 80
+                    if(res == 0) then pure (Just sock) else pure Nothing
 
 -- WRITE
 private
@@ -57,15 +47,16 @@ fs1 c (prev, headers, body) =
    else
         (p, headers ++ singleton(c), body)
 
-parseResponse : Socket -> ByteLength -> IO(String, String)
-parseResponse socket len = do
+private
+parseResponse : Socket -> ByteLength -> Bool -> IO(Maybe String, Maybe String)
+parseResponse socket len headersRead = do
     res <- recvFrom socket len
     case res of
-      Left err => pure ("", "")
+      Left err => pure (Nothing, Nothing)
       Right (addr, d, bl) =>
             let chars = List.reverse $ Strings.unpack d
                 (_, headers, body) = List.foldrImpl fs1 ("", "", "") id chars in
-                pure (headers, body)
+                pure (Just headers, Just body)
 
 private
 read : Socket -> ByteLength -> IO ()
@@ -82,20 +73,15 @@ read socket len = do
 public
 main : IO ()
 main = do
-     x <- f1
-     case x of
-          Nothing => putStrLn "Nothing"
-          Just socket => do
-                         res <- f2 socket
-                         if(res == 0) then
-                           do
-                           r <- post socket "/api/training" "key=kw2q1es1"
-                           case r of
-                             Just _ => do
-                                  x <- read socket 10000000
-                                  y <- read socket 10000000
-                                  putStrLn "OK"
-                             Nothing => putStrLn "SEND PAS OK"
-                         else
-                           putStrLn "FAILED"
+     maybeSocket <- httpConnect $ IPv4Addr 91 209 78 59
+     case maybeSocket of
+          Just sock => do
+               maybeBytesSent <- post sock "/api/training" "key=kw2q1es1"
+               case maybeBytesSent of
+                    Just _ => do
+                         x <- read sock 10000000
+                         y <- read sock 10000000
+                         putStrLn "OK"
+                    Nothing => putStrLn "SEND FAILED"
+          Nothing => putStrLn "SOCKET FAILED"
 
