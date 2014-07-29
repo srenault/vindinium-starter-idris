@@ -2,6 +2,7 @@ module Main
 
 import Network.Socket
 import Debug.Trace
+import Silly
 
 private
 httpConnect : SocketAddress -> IO(Maybe Socket)
@@ -15,8 +16,8 @@ httpConnect address = do
 
 -- WRITE
 private
-f3 : Socket -> String -> IO(Maybe ByteLength)
-f3 socket d = do 
+write : Socket -> String -> IO(Maybe ByteLength)
+write socket d = do 
   res <- send socket d
   case res of
        Left err => pure Nothing
@@ -27,48 +28,53 @@ public
 post : Socket -> String -> String -> IO(Maybe ByteLength)
 post socket path params =
      let size = show(Strings.length(params)) in
-     f3 socket ("POST " ++ path ++ " HTTP/1.1\r\n" ++ "Host: vindinium.org" ++ "\r\nContent-Length: " ++ size ++ "\r\n" ++ "Content-Type: application/x-www-form-urlencoded\r\n" ++ "\r\n" ++ params)
+     write socket ("POST " ++ path ++ " HTTP/1.1\r\n" ++ "Host: vindinium.org" ++ "\r\nContent-Length: " ++ size ++ "\r\n" ++ "Content-Type: application/x-www-form-urlencoded\r\n" ++ "\r\n" ++ params)
 
 private
-fs : Char -> (String, String) -> (String, String)
-fs c (prev, acc) =
-   let p = if(length(prev) == 4) then strTail (prev ++ singleton(c)) else prev ++ singleton(c) in
-   if(prev == "\r\n\r\n") then
-        (prev, acc ++ singleton(c))
-   else
-        (p, acc)
+foldHeaders : String -> Maybe Int -> Maybe Int
+foldHeaders header (Just contentLength) = Just contentLength
+foldHeaders header Nothing =
+            let (name :: value :: xs) = split (== ':') header in
+            if(name == "Content-Length") then parseInt (ltrim value) else Nothing
 
 private
-fs1 : Char -> (String, String, String) -> (String, String, String)
-fs1 c (prev, headers, body) =
+extractContentLength : String -> Maybe Int
+extractContentLength headers =
+                     let lines = Strings.lines headers in
+                     List.foldrImpl foldHeaders Nothing id lines
+
+private
+foldResponse : Bool -> Char -> (String, String, String) -> (String, String, String)
+foldResponse b c (prev, headers, body) =
    let p = if(length(prev) == 4) then strTail (prev ++ singleton(c)) else prev ++ singleton(c) in
-   if(prev == "\r\n\r\n") then
+   if(b || prev == "\r\n\r\n") then
         (prev, headers, body ++ singleton(c))
    else
         (p, headers ++ singleton(c), body)
 
 private
-parseResponse : Socket -> ByteLength -> Bool -> IO(Maybe String, Maybe String)
-parseResponse socket len headersRead = do
-    res <- recvFrom socket len
+parseResponse : Socket -> ByteLength -> Maybe Int -> String -> String -> IO(String, String)
+parseResponse socket toRead maybeContentLength accHeaders accBody = do
+    res <- recvFrom socket toRead
     case res of
-      Left err => pure (Nothing, Nothing)
-      Right (addr, d, bl) =>
+      Left err => pure ("", "")
+      Right (_, d, _) =>
             let chars = List.reverse $ Strings.unpack d
-                (_, headers, body) = List.foldrImpl fs1 ("", "", "") id chars in
-                pure (Just headers, Just body)
+                f = foldResponse $ Maybe.isJust maybeContentLength
+                (_, partialHeaders, partialBody) = List.foldrImpl f ("", "", "") id chars
+                eventuallyContentLength = maybe (extractContentLength partialHeaders) (\_ => maybeContentLength) maybeContentLength in
 
-private
-read : Socket -> ByteLength -> IO ()
-read socket len = do
-    res <- recvFrom socket len
-    case trace "read" res of
-      Left err => putStrLn "READ ERROR"
-      Right (addr, d, bl) =>
-            let chars = List.reverse $ Strings.unpack d
-                z = ("", "")
-                (n, m) = List.foldrImpl fs z id chars in
-                putStrLn $ d
+                let totalRead = (length accBody) + (length partialBody)
+                    headers = accHeaders ++ partialHeaders
+                    body = accBody ++ partialBody in
+
+                case eventuallyContentLength of
+                     Just contentLength =>
+                          if(length body < cast {to=Nat} contentLength) then
+                            parseResponse socket toRead eventuallyContentLength headers body
+                          else
+                            pure (headers, body)
+                     _  => parseResponse socket toRead Nothing accHeaders accBody
 
 public
 main : IO ()
@@ -79,9 +85,9 @@ main = do
                maybeBytesSent <- post sock "/api/training" "key=kw2q1es1"
                case maybeBytesSent of
                     Just _ => do
-                         x <- read sock 10000000
-                         y <- read sock 10000000
-                         putStrLn "OK"
+                         (headers, body) <- parseResponse sock 10000000 Nothing "" ""
+                         putStrLn headers
+                         putStrLn body
                     Nothing => putStrLn "SEND FAILED"
           Nothing => putStrLn "SOCKET FAILED"
 
