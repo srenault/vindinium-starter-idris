@@ -129,3 +129,30 @@ mutual
 
 jsonToplevelValue : Parser JsonValue
 jsonToplevelValue = (map JsonArray jsonArray) <|> (map JsonObject jsonObject)
+
+parseJson : String -> Either String JsonValue
+parseJson s = parse jsonToplevelValue s
+
+getVal : JsonValue -> String -> Maybe JsonValue
+getVal (JsonObject o) key = SortedMap.lookup key o
+getVal _ _ = Nothing
+
+getString : JsonValue -> String -> Maybe String
+getString o key = case (getVal o key) of
+  Just (JsonString s) => Just s
+  _ => Nothing
+
+getInt : JsonValue -> String -> Maybe Int
+getInt o key = case (getVal o key) of
+  Just (JsonNumber s) => Just (cast {to=Int} s)
+  _ => Nothing
+
+getBool : JsonValue -> String -> Maybe Bool
+getBool o key = case (getVal o key) of
+  Just (JsonBool b) => Just b
+  _ => Nothing
+
+getArray : JsonValue -> String -> Maybe (List JsonValue)
+getArray o key = case (getVal o key) of
+  Just (JsonArray s) => Just s
+  _ => Nothing

@@ -1,4 +1,4 @@
-module Main
+module Http
 
 import Network.Socket
 import Debug.Trace
