@@ -8,8 +8,8 @@ import Debug.Trace
 
 record Position : Type where
   MkPosition
-  :  (posX : Int)
-  -> (posY : Int)
+  :  (x : Int)
+  -> (y : Int)
   -> Position
 
 parsePosition : JsonValue -> Maybe Position
@@ -20,16 +20,14 @@ parsePosition o = do
     Just $ MkPosition x y
 
 instance Show Position where
-  show position = "Position OK"
+  show position = "{ x: " ++ show (x position) ++ ", y: " ++ show (y position) ++ " }"
 
 -- Hero
 
 record Hero : Type where
   MkHero
-  :  (id        : Int)
+  :  (userId    : Int)
   -> (name      : String)
-  -> (userId    : Maybe String)
-  -> (elo       : Maybe Int)
   -> (pos       : Position)
   -> (life      : Int)
   -> (gold      : Int)
@@ -39,7 +37,7 @@ record Hero : Type where
   -> Hero
 
 instance Show Hero where
-  show hero = "Hero OK" --"{ id: " ++ (id hero) ++ ", name: " ++ (name hero) ++ ", userId: " ++ (userId hero) ++ ", elo: " ++ (elo hero) ++ ", pos: " ++ (pos hero) ++ ", life: " ++ (life hero) ++ ", gold: " ++ (gold hero)  ++ ", mineCount: " ++ (mineCount hero)  ++ ", spawnPos: " ++ (spawnPos hero)  ++ ", crashed: " ++ (crashed hero)  ++ " }"
+  show hero = "{ id: " ++ show (userId hero) ++ ", name: " ++ (name hero) ++ ", pos: " ++ show (pos hero) ++ ", life: " ++ show (life hero) ++ ", gold: " ++ show (gold hero)  ++ ", mineCount: " ++ show (mineCount hero)  ++ ", spawnPos: " ++ show (spawnPos hero)  ++ ", crashed: " ++ show (crashed hero)  ++ " }"
 
 parseHero : JsonValue -> Maybe Hero
 parseHero o =
@@ -57,7 +55,7 @@ parseHero o =
     spawnPosObj <- getVal o "spawnPos"
     spawnPos <- parsePosition spawnPosObj
     crashed <- getB "crashed"
-    Just $ MkHero id name (getS "userId") (getI "elo") pos life gold mineCount spawnPos crashed
+    Just $ MkHero id name pos life gold mineCount spawnPos crashed
 -- Tile
 
 data Tile = AirTile
@@ -66,6 +64,15 @@ data Tile = AirTile
           | MineTile (Maybe Int)
           | HeroTile Int
 
+instance Show Tile where
+  show tile = case tile of
+       AirTile => "  "
+       WallTile => "##"
+       TavernTile => "[]"
+       MineTile n => case n of
+                Just x => "$" ++ show x
+                Nothing => "$ "
+       HeroTile n => "@" ++ show n
 
 parseTile : List Char -> Maybe Tile
 parseTile tile = case tile of
@@ -97,8 +104,11 @@ parseTiles tiles =
 record Board : Type where
   MkBoard
   : (size: Int)
-  -> (titles: List Tile)
+  -> (tiles: List Tile)
   -> Board
+
+instance Show Board where
+  show board = "{ size: " ++ show (size board) ++ ", titles: " ++ show (tiles board) ++ " }"
 
 parseBoard : JsonValue -> Maybe Board
 parseBoard o =
@@ -114,7 +124,7 @@ parseBoard o =
 
 record Game : Type where
   MkGame
-  : (id : String)
+  : (gameId : String)
   -> (turn : Int)
   -> (maxTurns : Int)
   -> (heroes : List Hero)
@@ -123,7 +133,7 @@ record Game : Type where
   -> Game
 
 instance Show Game where
-  show game = "game OK"
+  show game = "{ id: " ++ show (gameId game) ++ ", turn: " ++ show (turn game) ++ ", maxTurns: " ++ show (maxTurns game) ++ ", heroes: " ++ show (heroes game) ++ ", board: " ++ show (board game) ++ ", finished: " ++ show (finished game) ++ " }"
 
 parseGame : JsonValue -> Maybe Game
 parseGame o =
@@ -154,7 +164,7 @@ record Input : Type where
   -> Input
 
 instance Show Input where
-  show input = "{ token: " ++ (token input) ++ ", view: " ++ (viewUrl input) ++ ", play: " ++ (playUrl input) ++ " }"
+  show input = "{ game: " ++ (show (game input)) ++ ", token: " ++ (token input) ++ ", viewUrl: " ++ (viewUrl input) ++ ", playUrl: " ++ (playUrl input) ++ ", hero: " ++ (show (hero input)) ++ " }"
 
 parseInput : String -> Maybe Input
 parseInput str =
