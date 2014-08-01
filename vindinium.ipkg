@@ -4,4 +4,5 @@ sourcedir = src
 opts = "-p lightyear -p text -p lightyear_text"
 
 modules = Main,
-          Http
+          Http,
+          Vindinium

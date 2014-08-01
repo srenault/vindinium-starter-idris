@@ -1,24 +1,60 @@
 module Main
 
+import Data.SortedMap
 import System
 import Json
 import Model
 import Http
+import Vindinium
 
-sampleJson : String
-sampleJson = """{"game":{"id":"2vbaf1wc","turn":0,"maxTurns":1200,"heroes":[{"id":1,"name":"wolfie","userId":"0hgzoiln","elo":1850,"pos":{"x":1,"y":3},"life":100,"gold":0,"mineCount":0,"spawnPos":{"x":1,"y":3},"crashed":false},{"id":2,"name":"random","pos":{"x":18,"y":3},"life":100,"gold":0,"mineCount":0,"spawnPos":{"x":18,"y":3},"crashed":false},{"id":3,"name":"random","pos":{"x":18,"y":16},"life":100,"gold":0,"mineCount":0,"spawnPos":{"x":18,"y":16},"crashed":false},{"id":4,"name":"random","pos":{"x":1,"y":16},"life":100,"gold":0,"mineCount":0,"spawnPos":{"x":1,"y":16},"crashed":false}],"board":{"size":20,"tiles":"          ####################            ##  @1    ################    @4  ##      []##  ####################  ##[]                ################              $-    ##      ########      ##    $-          ##        ####        ##        ##        $-####        ####$-        ####    ##  ######$-    $-######  ##    ##      ##  ####################  ##                ####################                    ####################                ##  ####################  ##      ##    ##  ######$-    $-######  ##    ####        $-####        ####$-        ##        ##        ####        ##          $-    ##      ########      ##    $-              ################                []##  ####################  ##[]      ##  @2    ################    @3  ##            ####################          "},"finished":false},"hero":{"id":1,"name":"wolfie","userId":"0hgzoiln","elo":1850,"pos":{"x":1,"y":3},"life":100,"gold":0,"mineCount":0,"spawnPos":{"x":1,"y":3},"crashed":false},"token":"b1oy","viewUrl":"http://vindinium.org/2vbaf1wc","playUrl":"http://vindinium.org/api/2vbaf1wc/b1oy/play"}"""
+ParsedArgs : Type
+ParsedArgs = SortedMap String (List String)
+
+foldArgs : String -> (Maybe String, ParsedArgs) -> (Maybe String, ParsedArgs)
+foldArgs arg acc =
+         let (maybeLast, parsed) = acc in
+             if(strHead arg == '-') then
+               (Just (strTail arg), insert (strTail arg) [] parsed)
+             else
+               case maybeLast of
+                    Just last =>
+                         case (lookup last parsed) of
+                              Just values => (maybeLast, insert last (arg :: values) parsed)
+                              Nothing => (maybeLast, parsed)
+                    Nothing => (maybeLast, parsed)
+
+parseArgs : List String -> ParsedArgs
+parseArgs args =
+          let (_, parsed) = List.foldrImpl foldArgs (Nothing, empty) id (reverse args) in
+          parsed
+
+printUsage : IO ()
+printUsage = putStrLn "USAGE"
+           --putStrLn "vindinium -training <turns> <map>"
 
 main : IO ()
 main = do
      args <- System.getArgs
-     case args of
-          [_, name] => do
-              putStrLn name
-          [self] => do
-              response <- post "/api/training" "key=kw2q1es1"
-              case response of
-                   Just (headers, body) =>
-                        case (parseInput body) of
-                             Just parsed => putStrLn $ show parsed
-                             Nothing => putStrLn "Unable to read parse JSON"
-                   Nothing => putStrLn "Unexpected error!"
+     case (parseArgs args) of
+       parsedArgs =>
+         let token = lookup "token" parsedArgs
+             trainingMode = lookup "training" parsedArgs
+             arenaMode = lookup "arena" parsedArgs in
+             case (token, trainingMode, arenaMode) of
+                  (Nothing, _, _) => printUsage
+                  (Just token, Just [], _) => putStrLn "training with default value"
+                  (Just token, Just [turns], _) => putStrLn "training with turns"
+                  (Just token, Just [turns, map], _) => putStrLn "training with turns and map"
+                  (Just token, Nothing, Just []) => putStrLn "arena with default value"
+                  (Just token, Nothing, Just [games]) => putStrLn ("arena with " ++ (show games))
+                  (Just token, _, _) => printUsage
+
+
+
+     -- response <- post "/api/training" "key=kw2q1es1"
+     -- case response of
+     --      Just (headers, body) =>
+     --           case (parseInput body) of
+     --                Just parsed => putStrLn $ show parsed
+     --                Nothing => putStrLn "Unable to read parse JSON"
+     --      Nothing => putStrLn "Unexpected error!"

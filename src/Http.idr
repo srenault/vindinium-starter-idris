@@ -3,6 +3,9 @@ module Http
 import Network.Socket
 import Debug.Trace
 import Silly
+import Model
+
+-- Basic HTTP support
 
 private
 foldHeaders : String -> Maybe Int -> Maybe Int
@@ -68,28 +71,71 @@ write socket d = do
        Left err => pure Nothing
        Right byteLength => pure $ Just byteLength
 
-public
+foldMkString : String -> String -> String -> String
+foldMkString separator s acc = acc ++ separator ++ s
+
+private
+mkString : String -> List String -> String
+mkString separator list = List.foldrImpl (foldMkString "#") "" id list
+
+private
+parseURL : String -> Maybe (String, String)
+parseURL url =
+    let splitted = split (== '/') "http://vindinium.org/api/training" in
+        case splitted of
+             ("http:" :: _ :: host :: components) => Just $ (host, mkString "/" components)
+             _ => Nothing
+
+private
 post : String -> String -> IO (Maybe (String, String))
-post path params = do
-     maybeSocket <- httpConnect $ IPv4Addr 91 209 78 59
-     case maybeSocket of
-          Just sock =>
-               let size = show(length params)
-                   res = write sock ("POST " ++ path ++ " HTTP/1.1\r\n" ++ "Host: vindinium.org" ++ "\r\nContent-Length: " ++ size ++ "\r\n" ++ "Content-Type: application/x-www-form-urlencoded\r\n" ++ "\r\n" ++ params) in
-                   do
-                   eventuallySent <- res
-                   case eventuallySent of
-                        Just _ => do
-                             response <- parseResponse sock 10000 Nothing "" ""
-                             pure $ Just response
-                        Nothing => pure Nothing
+post url params = do
+     case (parseURL url) of
+          Just (host, path) => do
+               maybeSocket <- httpConnect $ (Hostname host)
+               case maybeSocket of
+                    Just sock =>
+                         let size = show(length params)
+                             content = "POST " ++ path ++ " HTTP/1.1\r\n" ++ "Host: vindinium.org" ++ "\r\nContent-Length: " ++ size ++ "\r\n" ++ "Content-Type: application/x-www-form-urlencoded\r\n" ++ "\r\n" ++ params
+                             res = write sock (content) in
+                             do
+                             eventuallySent <- res
+                             case eventuallySent of
+                                  Just _ => do
+                                       response <- parseResponse sock 10000 Nothing "" ""
+                                       pure $ Just response
+                                  Nothing => pure Nothing
+                    Nothing => pure Nothing
           Nothing => pure Nothing
 
 public
 main : IO ()
 main = do
-     response <- post "/api/training" "key=kw2q1es1"
+     response <- post "http://vindinium.org/api/training" "key=kw2q1es1"
      case response of
           Just (headers, body) => putStrLn body
           Nothing => putStrLn "Unexpected error"
 
+-- Vindinium HTTP
+
+private
+parseVindiniumResponse : IO $ Maybe (String, String) -> IO $ Maybe Input
+parseVindiniumResponse r = do
+              response <- r
+              case response of
+                   Just (_, body) => pure $ parseInput body
+                   Nothing => pure $ Nothing
+
+public
+arena : String -> IO $ Maybe Input
+arena key = parseVindiniumResponse (post "http://vindinium.org/api/arena" ("key=" ++ key))
+
+public
+training : String -> Int -> Maybe String -> IO $ Maybe Input
+training key turns maybeMap =
+         let map = fromMaybe "" maybeMap
+             params = ("key=" ++ key) ++ ("&turns=" ++ show turns) ++ ("&map=" ++ map) in
+         parseVindiniumResponse (post "http://vindinium.org/api/training" params)
+
+public
+move : String -> Direction -> IO $ Maybe Input
+move url direction = parseVindiniumResponse (post url ("dir=" ++ show direction))

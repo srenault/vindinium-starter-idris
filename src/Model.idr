@@ -4,6 +4,21 @@ import Json
 import Silly
 import Debug.Trace
 
+-- Direction
+
+data Direction = Stay
+               | North
+               | South
+               | East
+               | West
+
+instance Show Direction where
+  show Stay = "Stay"
+  show North = "North"
+  show South = "South"
+  show East = "East"
+  show West = "West"
+
 -- Position
 
 record Position : Type where
@@ -65,14 +80,12 @@ data Tile = AirTile
           | HeroTile Int
 
 instance Show Tile where
-  show tile = case tile of
-       AirTile => "  "
-       WallTile => "##"
-       TavernTile => "[]"
-       MineTile n => case n of
-                Just x => "$" ++ show x
-                Nothing => "$ "
-       HeroTile n => "@" ++ show n
+  show AirTile = "  "
+  show WallTile = "##"
+  show TavernTile = "[]"
+  show (MineTile $ Just n) = "$" ++ show n
+  show (MineTile Nothing) = "$ "
+  show (HeroTile n) = "@" ++ show n
 
 parseTile : List Char -> Maybe Tile
 parseTile tile = case tile of
