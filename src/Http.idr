@@ -82,7 +82,7 @@ private
 parseURL : String -> Maybe (String, String)
 parseURL url =
     let splitted = split (== '/') url in
-        case (trace (show splitted) splitted) of
+        case splitted of
              ("http:" :: _ :: host :: components) => Just $ (host, mkString "/" components)
              _ => Nothing
 
@@ -91,7 +91,6 @@ post : String -> String -> IO (Maybe (String, String))
 post url params = do
      case (parseURL url) of
           Just (host, path) => do
-               _ <- trace (host ++ " " ++ path) (pure ())
                maybeSocket <- httpConnect $ (Hostname host)
                case maybeSocket of
                     Just sock =>
@@ -111,24 +110,26 @@ post url params = do
 -- Vindinium HTTP
 
 private
-parseInput : IO $ Maybe (String, String) -> IO $ Maybe Input
+parseInput : IO $ Maybe (String, String) -> IO $ Either String Input
 parseInput r = do
               response <- r
               case response of
-                   Just (_, body) => pure $ trace body Model.parseInput body
-                   Nothing => pure $ Nothing
+                   Just (_, body) => case Model.parseInput body of
+                        Just input => pure $ Right input
+                        Nothing => pure $ Left body
+                   Nothing => pure $ Left "Unable to read response."
 
 public
-arena : String -> IO $ Maybe Input
+arena : String -> IO $ Either String Input
 arena key = parseInput (post "http://vindinium.org/api/arena" ("key=" ++ key))
 
 public
-training : String -> Int -> Maybe String -> IO $ Maybe Input
+training : String -> Int -> Maybe String -> IO $ Either String Input
 training key turns maybeMap =
          let map = fromMaybe "" maybeMap
              params = ("key=" ++ key) ++ ("&turns=" ++ show turns) ++ ("&map=" ++ map) in
          parseInput (post "http://vindinium.org/api/training" params)
 
 public
-move : String -> Direction -> IO $ Maybe Input
+move : String -> Direction -> IO $ Either String Input
 move url direction = parseInput (post url ("dir=" ++ show direction))

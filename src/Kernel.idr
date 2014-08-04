@@ -4,22 +4,22 @@ import Model
 import Http
 import Debug.Trace
 
-move : Input -> Direction -> IO $ Maybe Input
+move : Input -> Direction -> IO $ Either String Input
 move input direction = Http.move (playUrl input) direction
 
 private
-steps : (Lazy $ IO $ Maybe Input) -> IO ()
+steps : (Lazy $ IO $ Either String Input) -> IO ()
 steps nextInput = do
       maybeInput <- nextInput
       case (maybeInput) of
-           Just input =>
+           Right input =>
                 let game = game input in
                 if(finished game) then putStrLn "Game finished"
                 else
                    do
                    _ <- steps (move input East)
                    pure ()
-           _ => putStrLn "Unexpected error"
+           Left error => putStrLn $ "Unexpected error: \n" ++ error
 
 public
 training : String -> Int -> Maybe String -> IO ()
@@ -27,26 +27,26 @@ training token turns map = do
          let nextInput = Http.training token turns map
          maybeInput <- nextInput
          case maybeInput of
-              Just input => do
+              Right input => do
                 _ <- putStrLn ("Training game " ++ (viewUrl input))
---                _ <- steps nextInput
+                _ <- steps nextInput
                 putStrLn ("Finished training game " ++ (viewUrl input))
-              Nothing => putStrLn "Unexpected error"
+              Left error => putStrLn $ "Unexpected error: \n" ++ error
 
 private
-oneGame : Lazy $ IO (Maybe Input) -> Int -> Int -> IO ()
+oneGame : Lazy $ IO (Either String Input) -> Int -> Int -> IO ()
 oneGame nextInput games current =
         if(current <= games) then
           do
           _ <- putStrLn "Waiting for pairing..."
           maybeInput <- nextInput
           case maybeInput of
-               Just input => do
+               Right input => do
                     _ <- putStrLn ("Start arena game " ++ (viewUrl input))
                     _ <- steps nextInput
                     _ <- putStrLn ("Finished arena game" ++ (viewUrl input))
                     oneGame nextInput games (current + 1)
-               Nothing => putStrLn ""
+               Left error => putStrLn $ "Unexpected error: \n" ++ error
         else
           pure ()
 
