@@ -91,6 +91,7 @@ post : String -> String -> IO (Maybe (String, String))
 post url params = do
      case (parseURL url) of
           Just (host, path) => do
+               _ <- putStrLn (host ++ " " ++ path)
                maybeSocket <- httpConnect $ (Hostname host)
                case maybeSocket of
                     Just sock =>
@@ -118,24 +119,24 @@ main = do
 -- Vindinium HTTP
 
 private
-parseVindiniumResponse : IO $ Maybe (String, String) -> IO $ Maybe Input
-parseVindiniumResponse r = do
+parseInput : IO $ Maybe (String, String) -> IO $ Maybe Input
+parseInput r = do
               response <- r
               case response of
-                   Just (_, body) => pure $ parseInput body
+                   Just (_, body) => pure $ Model.parseInput body
                    Nothing => pure $ Nothing
 
 public
 arena : String -> IO $ Maybe Input
-arena key = parseVindiniumResponse (post "http://vindinium.org/api/arena" ("key=" ++ key))
+arena key = parseInput (post "http://vindinium.org/api/arena" ("key=" ++ key))
 
 public
 training : String -> Int -> Maybe String -> IO $ Maybe Input
 training key turns maybeMap =
          let map = fromMaybe "" maybeMap
              params = ("key=" ++ key) ++ ("&turns=" ++ show turns) ++ ("&map=" ++ map) in
-         parseVindiniumResponse (post "http://vindinium.org/api/training" params)
+         parseInput (post "http://vindinium.org/api/training" params)
 
 public
 move : String -> Direction -> IO $ Maybe Input
-move url direction = parseVindiniumResponse (post url ("dir=" ++ show direction))
+move url direction = parseInput (post url ("dir=" ++ show direction))

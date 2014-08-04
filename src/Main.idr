@@ -6,6 +6,7 @@ import Json
 import Model
 import Http
 import Vindinium
+import Kernel
 
 ParsedArgs : Type
 ParsedArgs = SortedMap String (List String)
@@ -41,13 +42,12 @@ main = do
              trainingMode = lookup "training" parsedArgs
              arenaMode = lookup "arena" parsedArgs in
              case (token, trainingMode, arenaMode) of
-                  (Nothing, _, _) => printUsage
-                  (Just token, Just [], _) => putStrLn "training with default value"
+                  (Just token, Just [], _) => Kernel.training "kw2q1es1" 100 Nothing
                   (Just token, Just [turns], _) => putStrLn "training with turns"
                   (Just token, Just [turns, map], _) => putStrLn "training with turns and map"
                   (Just token, Nothing, Just []) => putStrLn "arena with default value"
                   (Just token, Nothing, Just [games]) => putStrLn ("arena with " ++ (show games))
-                  (Just token, _, _) => printUsage
+                  _ => printUsage
 
 
 
