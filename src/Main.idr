@@ -7,6 +7,7 @@ import Model
 import Http
 import Vindinium
 import Kernel
+import Debug.Trace
 
 ParsedArgs : Type
 ParsedArgs = SortedMap String (List String)
@@ -31,7 +32,6 @@ parseArgs args =
 
 printUsage : IO ()
 printUsage = putStrLn "USAGE"
-           --putStrLn "vindinium -training <turns> <map>"
 
 main : IO ()
 main = do

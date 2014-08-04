@@ -76,13 +76,13 @@ foldMkString separator s acc = acc ++ separator ++ s
 
 private
 mkString : String -> List String -> String
-mkString separator list = List.foldrImpl (foldMkString "#") "" id list
+mkString separator list = List.foldrImpl (foldMkString separator) "" id (reverse list)
 
 private
 parseURL : String -> Maybe (String, String)
 parseURL url =
-    let splitted = split (== '/') "http://vindinium.org/api/training" in
-        case splitted of
+    let splitted = split (== '/') url in
+        case (trace (show splitted) splitted) of
              ("http:" :: _ :: host :: components) => Just $ (host, mkString "/" components)
              _ => Nothing
 
@@ -91,7 +91,7 @@ post : String -> String -> IO (Maybe (String, String))
 post url params = do
      case (parseURL url) of
           Just (host, path) => do
-               _ <- putStrLn (host ++ " " ++ path)
+               _ <- trace (host ++ " " ++ path) (pure ())
                maybeSocket <- httpConnect $ (Hostname host)
                case maybeSocket of
                     Just sock =>
@@ -108,14 +108,6 @@ post url params = do
                     Nothing => pure Nothing
           Nothing => pure Nothing
 
-public
-main : IO ()
-main = do
-     response <- post "http://vindinium.org/api/training" "key=kw2q1es1"
-     case response of
-          Just (headers, body) => putStrLn body
-          Nothing => putStrLn "Unexpected error"
-
 -- Vindinium HTTP
 
 private
@@ -123,7 +115,7 @@ parseInput : IO $ Maybe (String, String) -> IO $ Maybe Input
 parseInput r = do
               response <- r
               case response of
-                   Just (_, body) => pure $ Model.parseInput body
+                   Just (_, body) => pure $ trace body Model.parseInput body
                    Nothing => pure $ Nothing
 
 public
