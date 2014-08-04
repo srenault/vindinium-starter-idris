@@ -95,13 +95,16 @@ post url params = do
                case maybeSocket of
                     Just sock =>
                          let size = show(length params)
-                             content = "POST " ++ path ++ " HTTP/1.1\r\n" ++ "Host: vindinium.org" ++ "\r\nContent-Length: " ++ size ++ "\r\n" ++ "Content-Type: application/x-www-form-urlencoded\r\n" ++ "\r\n" ++ params
+                             hostHeader = "Host: " ++ host
+                             contentTypeHeader = "Content-Type: application/x-www-form-urlencoded\r\n"
+                             contentLengthHeader = "Content-Length: " ++ size
+                             content = "POST " ++ path ++ " HTTP/1.1\r\n" ++ hostHeader ++ "\r\n" ++ contentLengthHeader ++ "\r\n" ++ contentTypeHeader ++ "\r\n" ++ params
                              res = write sock (content) in
                              do
                              eventuallySent <- res
                              case eventuallySent of
                                   Just _ => do
-                                       response <- parseResponse sock 10000 Nothing "" ""
+                                       response <- parseResponse sock 1024 Nothing "" ""
                                        pure $ Just response
                                   Nothing => pure Nothing
                     Nothing => pure Nothing
