@@ -3,6 +3,7 @@ module Kernel
 import Model
 import Http
 import Debug.Trace
+import Silly
 
 move : Input -> Direction -> IO $ Either String Input
 move input direction = Http.move (playUrl input) direction
@@ -28,7 +29,7 @@ training token turns map = do
          maybeInput <- nextInput
          case maybeInput of
               Right input => do
-                _ <- putStrLn ("Training game " ++ (viewUrl input))
+                _ <- log ("Training game " ++ (viewUrl input))
                 _ <- steps nextInput
                 putStrLn ("Finished training game " ++ (viewUrl input))
               Left error => putStrLn $ "Unexpected error: \n" ++ error
@@ -42,9 +43,9 @@ oneGame nextInput games current =
           maybeInput <- nextInput
           case maybeInput of
                Right input => do
-                    _ <- putStrLn ("Start arena game " ++ (viewUrl input))
+                    _ <- log ("Start arena game " ++ (viewUrl input))
                     _ <- steps nextInput
-                    _ <- putStrLn ("Finished arena game" ++ (viewUrl input))
+                    _ <- log ("Finished arena game" ++ (viewUrl input))
                     oneGame nextInput games (current + 1)
                Left error => putStrLn $ "Unexpected error: \n" ++ error
         else

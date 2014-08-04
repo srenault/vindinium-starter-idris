@@ -1,5 +1,7 @@
 module Silly
 
+import Debug.Trace
+
 charToInt : Char -> Maybe Int
 charToInt c = let i = cast {to=Int} c in
               let zero = cast {to=Int} '0' in
@@ -16,3 +18,6 @@ parse' acc (d::ds) = parse' (10 * acc + d) ds
 
 total parseInt : String -> Maybe Int
 parseInt str = (sequence (map charToInt (unpack str))) >>= parse' 0
+
+log : String -> IO ()
+log a = trace a (pure ())

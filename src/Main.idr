@@ -42,19 +42,19 @@ main = do
              trainingMode = lookup "training" parsedArgs
              arenaMode = lookup "arena" parsedArgs in
              case (token, trainingMode, arenaMode) of
-                  (Just token, Just [], _) => Kernel.training "kw2q1es1" 100 Nothing
-                  (Just token, Just [turns], _) => putStrLn "training with turns"
-                  (Just token, Just [turns, map], _) => putStrLn "training with turns and map"
-                  (Just token, Nothing, Just []) => putStrLn "arena with default value"
-                  (Just token, Nothing, Just [games]) => putStrLn ("arena with " ++ (show games))
+                  -- Training
+                  (Just token, Just [], _) =>
+                        Kernel.training "kw2q1es1" 100 Nothing
+                  (Just token, Just [turns], _) =>
+                        let t = fromMaybe 100 (parseInt turns) in
+                        Kernel.training "kw2q1es1" t Nothing
+                  (Just token, Just [turns, map], _) =>
+                        let t = fromMaybe 100 (parseInt turns) in
+                        Kernel.training "kw2q1es1" t (Just map)
+                  -- Arena
+                  (Just token, Nothing, Just []) =>
+                        Kernel.arena "kw2q1es1" 65536
+                  (Just token, Nothing, Just [games]) =>
+                        let g = fromMaybe 65536 (parseInt games) in
+                        Kernel.arena "kw2q1es1" g
                   _ => printUsage
-
-
-
-     -- response <- post "/api/training" "key=kw2q1es1"
-     -- case response of
-     --      Just (headers, body) =>
-     --           case (parseInput body) of
-     --                Just parsed => putStrLn $ show parsed
-     --                Nothing => putStrLn "Unable to read parse JSON"
-     --      Nothing => putStrLn "Unexpected error!"
