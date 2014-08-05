@@ -1,8 +1,7 @@
 package vindinium
 
 sourcedir = src
-opts = "-p lightyear -p text -p lightyear_text"
+opts = "-p lightyear -p text -p lightyear_text -p effects"
 
 modules = Main,
-          Http,
-          Vindinium
+          Http

@@ -15,12 +15,9 @@ steps nextInput = do
       case (maybeInput) of
            Right input =>
                 let game = game input in
-                if(finished game) then putStrLn "Game finished"
-                else
-                   do
-                   _ <- steps (move input East)
-                   pure ()
-           Left error => putStrLn $ "Unexpected error: \n" ++ error
+                if(finished game) then log "Game finished"
+                else steps (move input East) >>= (\_ => pure ())
+           Left error => log $ "Unexpected error: \n" ++ error
 
 public
 training : String -> Int -> Maybe String -> IO ()
@@ -31,15 +28,15 @@ training token turns map = do
               Right input => do
                 _ <- log ("Training game " ++ (viewUrl input))
                 _ <- steps nextInput
-                putStrLn ("Finished training game " ++ (viewUrl input))
-              Left error => putStrLn $ "Unexpected error: \n" ++ error
+                log ("Finished training game " ++ (viewUrl input))
+              Left error => log $ "Unexpected error: \n" ++ error
 
 private
 oneGame : Lazy $ IO (Either String Input) -> Int -> Int -> IO ()
 oneGame nextInput games current =
         if(current <= games) then
           do
-          _ <- putStrLn "Waiting for pairing..."
+          _ <- log "Waiting for pairing..."
           maybeInput <- nextInput
           case maybeInput of
                Right input => do
@@ -47,7 +44,7 @@ oneGame nextInput games current =
                     _ <- steps nextInput
                     _ <- log ("Finished arena game" ++ (viewUrl input))
                     oneGame nextInput games (current + 1)
-               Left error => putStrLn $ "Unexpected error: \n" ++ error
+               Left error => log $ "Unexpected error: \n" ++ error
         else
           pure ()
 

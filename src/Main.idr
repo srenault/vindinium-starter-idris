@@ -3,6 +3,7 @@ module Main
 import Data.SortedMap
 import System
 import Kernel
+import Bot
 
 ParsedArgs : Type
 ParsedArgs = SortedMap String (List String)
