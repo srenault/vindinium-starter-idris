@@ -135,4 +135,4 @@ training key turns maybeMap =
 
 public
 move : String -> Direction -> IO $ Either String Input
-move url direction = parseInput (post url ("dir=" ++ show direction))
+move url direction = parseInput (post url ("dir=" ++ (trace (show direction) (show direction))))

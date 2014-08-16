@@ -4,6 +4,7 @@ import Data.SortedMap
 import System
 import Kernel
 import Bot
+import Model
 
 ParsedArgs : Type
 ParsedArgs = SortedMap String (List String)
@@ -44,21 +45,22 @@ main = do
              trainingMode = lookup "training" parsedArgs
              arenaMode = lookup "arena" parsedArgs
              defaultTurns: Int = 100
-             defaultGames: Int = 65536 in
+             defaultGames: Int = 65536
+             bot = defaultBot in
              case (token, trainingMode, arenaMode) of
                   -- Training
                   (Just token, Just [], _) =>
-                        Kernel.training token defaultTurns Nothing
+                        Kernel.training bot token defaultTurns Nothing
                   (Just token, Just [turns], _) =>
                         let t = fromMaybe defaultTurns (parseInt turns) in
-                        Kernel.training token t Nothing
+                        Kernel.training bot token t Nothing
                   (Just token, Just [turns, map], _) =>
                         let t = fromMaybe defaultTurns (parseInt turns) in
-                        Kernel.training token t (Just map)
+                        Kernel.training bot token t (Just map)
                   -- Arena
                   (Just token, Nothing, Just []) =>
-                        Kernel.arena token defaultGames
+                        Kernel.arena bot token defaultGames
                   (Just token, Nothing, Just [games]) =>
                         let g = fromMaybe defaultGames (parseInt games) in
-                        Kernel.arena token g
+                        Kernel.arena bot token g
                   _ => printUsage

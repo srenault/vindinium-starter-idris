@@ -1,3 +1,6 @@
 *.ibc
 target
 vindinium
+*.DS_Store
+*.so
+*.o

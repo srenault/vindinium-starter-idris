@@ -1,7 +1,4 @@
-all: install
-
-install: build
-	idris --install vindinium.ipkg
+all: build
 
 build: src/*.idr
 	idris --build vindinium.ipkg

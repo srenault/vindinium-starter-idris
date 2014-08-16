@@ -1,7 +1,12 @@
 package vindinium
 
 sourcedir = src
-opts = "-p lightyear -p text -p lightyear_text -p effects"
+opts = "-o vindinium -p lightyear -p text -p lightyear_text -p effects"
 
 modules = Main,
-          Http
+          Http,
+          RandC
+
+makefile = MakefileC
+
+objs = rand_c.o, rand_c.h
