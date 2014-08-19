@@ -144,7 +144,7 @@ getString o key = case (getVal o key) of
 
 getInt : JsonValue -> String -> Maybe Int
 getInt o key = case (getVal o key) of
-  Just (JsonNumber s) => Just (cast {to=Int} s)
+  Just (JsonNumber s) => Just (cast s)
   _ => Nothing
 
 getBool : JsonValue -> String -> Maybe Bool

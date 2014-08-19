@@ -47,7 +47,7 @@ parseResponse socket toRead maybeContentLength accHeaders accBody = do
 
                 case eventuallyContentLength of
                      Just contentLength =>
-                          if(length body < cast {to=Nat} contentLength) then
+                          if(length body < cast contentLength) then
                             parseResponse socket toRead eventuallyContentLength headers body
                           else
                             pure (headers, body)
@@ -91,6 +91,7 @@ post : String -> String -> IO (Maybe (String, String))
 post url params = do
      case (parseURL url) of
           Just (host, path) => do
+               _ <- log (url ++ "  " ++ params)
                maybeSocket <- httpConnect $ (Hostname host)
                case maybeSocket of
                     Just sock =>
@@ -135,4 +136,4 @@ training key turns maybeMap =
 
 public
 move : String -> Direction -> IO $ Either String Input
-move url direction = parseInput (post url ("dir=" ++ (trace (show direction) (show direction))))
+move url direction = parseInput (post url ("dir=" ++ show direction))

@@ -31,7 +31,7 @@ training bot token turns map = do
          case maybeInput of
               Right input => do
                 _ <- log ("Training game " ++ (viewUrl input))
-                _ <- steps bot nextInput
+                _ <- steps bot (pure maybeInput)
                 log ("Finished training game " ++ (viewUrl input))
               Left error => log $ "Unexpected error: \n" ++ error
 
@@ -45,7 +45,7 @@ oneGame bot nextInput games current =
           case maybeInput of
                Right input => do
                     _ <- log ("Start arena game " ++ (viewUrl input))
-                    _ <- steps bot nextInput
+                    _ <- steps bot (pure maybeInput)
                     _ <- log ("Finished arena game" ++ (viewUrl input))
                     oneGame bot nextInput games (current + 1)
                Left error => log $ "Unexpected error: \n" ++ error

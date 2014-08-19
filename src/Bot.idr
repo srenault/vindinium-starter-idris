@@ -28,7 +28,7 @@ tileAt : Board -> Position -> Maybe Tile
 tileAt board position =
     let x = x position
         y = y position
-        idx = cast {to=Nat} (y * (size board) + x) in
+        idx = cast (y * (size board) + x) in
     if inBoard board position then
        index' idx (tiles board)
     else Nothing
