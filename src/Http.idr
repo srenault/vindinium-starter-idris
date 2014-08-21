@@ -1,7 +1,6 @@
 module Http
 
 import Network.Socket
-import Debug.Trace
 import Silly
 import Model
 
@@ -91,7 +90,6 @@ post : String -> String -> IO (Maybe (String, String))
 post url params = do
      case (parseURL url) of
           Just (host, path) => do
-               _ <- log (url ++ "  " ++ params)
                maybeSocket <- httpConnect $ (Hostname host)
                case maybeSocket of
                     Just sock =>

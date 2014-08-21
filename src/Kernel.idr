@@ -2,7 +2,6 @@ module Kernel
 
 import Model
 import Http
-import Debug.Trace
 import Silly
 import Bot
 
@@ -20,7 +19,7 @@ steps bot nextInput = do
                 if(finished game) then log "Game finished"
                 else do
                 dir <- bot input
-                steps bot (move input dir) >>= (\_ => pure ())
+                steps bot (move input dir)
            Left error => log $ "Unexpected error: \n" ++ error
 
 public
