@@ -2,13 +2,13 @@ Idris starter pack for the [Vindinium AI challenge](http://vindinium.org)
 
 ## Build
 ```sh
-$ idris -o vindinium -p lightyear -p text -p lightyear_text -p effects src/Main.idr
+$ make
 ```
 
 ## Usage
 
 ```bash
-$ vindinium
+$ ./vindinium -token abcd -arena
 ```
 
 ## Dependencies
